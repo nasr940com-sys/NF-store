@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NF Store | متجر الاشتراكات الرقمية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+    <!-- الهيدر -->
+    <header class="bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-800 py-4 px-5">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <span class="bg-indigo-600 text-white font-black px-2.5 py-1 rounded-lg text-lg">NF</span>
+                <h1 class="text-xl font-black tracking-wide text-white">STORE</h1>
+            </div>
+            <span class="text-xs bg-emerald-950 text-emerald-400 px-3 py-1.5 rounded-full border border-emerald-800/60 font-semibold">⚡ تسليم فوري ومضمون</span>
+        </div>
+    </header>
+
+    <!-- البنر الترحيبي -->
+    <main class="max-w-5xl mx-auto p-5">
+        <section class="my-6 text-center bg-gradient-to-b from-indigo-950/50 to-slate-900 border border-indigo-900/40 rounded-3xl p-8">
+            <h2 class="text-2xl md:text-4xl font-black mb-3 text-white">أقوى الاشتراكات الرقمية في مكان واحد</h2>
+            <p class="text-slate-400 text-sm md:text-base max-w-xl mx-auto">اختر اشتراكك المفضل من باقات الترفيه، التصميم، والـ IPTV بأفضل الأسعار في سلطنة عُمان.</p>
+        </section>
+
+        <!-- أزرار التصنيفات -->
+        <div class="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide">
+            <button onclick="filterProducts('all')" class="cat-btn bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">الكل</button>
+            <button onclick="filterProducts('iptv')" class="cat-btn bg-slate-900 border border-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">اشتراكات IPTV</button>
+            <button onclick="filterProducts('entertainment')" class="cat-btn bg-slate-900 border border-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">ترفيه وأفلام</button>
+            <button onclick="filterProducts('design')" class="cat-btn bg-slate-900 border border-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">تصميم وبرامج</button>
+            <button onclick="filterProducts('ai')" class="cat-btn bg-slate-900 border border-slate-800 text-slate-300 px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap">ذكاء اصطناعي</button>
+        </div>
+
+        <!-- شبكة المنتجات -->
+        <div id="products-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
+            <div class="text-center text-slate-500 col-span-full py-12">جاري تحميل المنتجات...</div>
+        </div>
+
+        <!-- نافذة الدفع وإتمام الطلب -->
+        <div id="checkout-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 relative shadow-2xl">
+                <button onclick="closeModal()" class="absolute top-5 left-5 text-slate-400 hover:text-white text-xl bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center">✕</button>
+                <h3 class="text-xl font-black mb-4 text-white">إتمام الطلب</h3>
+                <div id="selected-product-title" class="text-sm font-bold text-indigo-300 mb-4 bg-indigo-950/40 p-3.5 rounded-2xl border border-indigo-800/50"></div>
+                
+                <!-- تفاصيل التحويل البنكي -->
+                <div class="bg-slate-950 border border-slate-800 p-4 rounded-2xl mb-5 text-sm space-y-1.5">
+                    <p class="font-bold text-emerald-400 mb-2">💳 بيانات التحويل البنكي (بنك مسقط):</p>
+                    <p class="text-slate-300">رقم الحساب: <span class="font-mono text-white font-bold select-all">0000 0000 0000 0000</span></p>
+                    <p class="text-slate-300">أو التحويل السريع على الرقم: <span class="font-mono text-white font-bold select-all">90000000</span></p>
+                    <p class="text-xs text-slate-400 pt-1">بعد التحويل، اكتب رقم العملية (أو آخر 4 أرقام) بالأسفل ليصلك الاشتراك.</p>
+                </div>
+
+                <form id="order-form" onsubmit="submitOrder(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1.5">الاسم الكريم</label>
+                        <input type="text" id="cust-name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:border-indigo-500 focus:outline-none" placeholder="مثال: سالم">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1.5">رقم الواتساب (لاستلام الاشتراك)</label>
+                        <input type="tel" id="cust-phone" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:border-indigo-500 focus:outline-none" placeholder="مثال: 9xxxxxxx">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1.5">رقم إيصال التحويل البنكي</label>
+                        <input type="text" id="transfer-ref" required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm focus:border-indigo-500 focus:outline-none" placeholder="رقم العملية من إشعار البنك">
+                    </div>
+                    <button type="submit" id="submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 font-black py-3.5 rounded-xl transition text-sm text-white shadow-lg shadow-indigo-600/30">تأكيد وإرسال الطلب الآن</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // تم تركيب مفاتيحك هنا جاهزة!
+        const SUPABASE_URL = 'https://lhhypvlcvvozrhrkzdzq.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_ea5Oz3oTkWIHo5emJIf1Pw_7PhWnI5p';
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let allProducts = [];
+        let selectedProduct = null;
+
+        async function fetchProducts() {
+            const { data, error } = await supabaseClient.from('products').select('*').eq('is_active', true).order('id', { ascending: true });
+            const container = document.getElementById('products-list');
+            
+            if (error) {
+                container.innerHTML = `<p class="text-red-400 text-center col-span-full py-8">تأكد من تشغيل كود الصلاحيات (RLS) في Supabase</p>`;
+                return;
+            }
+
+            allProducts = data || [];
+            renderProducts(allProducts);
+        }
+
+        function renderProducts(products) {
+            const container = document.getElementById('products-list');
+            if (products.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-center col-span-full py-8">لا توجد منتجات في هذا القسم حالياً</p>';
+                return;
+            }
+
+            container.innerHTML = products.map(p => `
+                <div class="bg-slate-900 border border-slate-800/80 rounded-3xl p-6 flex flex-col justify-between hover:border-indigo-500/60 transition group">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs font-bold bg-slate-800 text-slate-300 px-3 py-1 rounded-full">${p.category}</span>
+                            <span class="text-xs font-bold ${p.product_type === 'api' ? 'text-emerald-400 bg-emerald-950/60 border border-emerald-800/50' : 'text-amber-400 bg-amber-950/60 border border-amber-800/50'} px-2.5 py-1 rounded-full">
+                                ${p.product_type === 'api' ? '⚡ تسليم فوري' : '📦 تسليم سريع'}
+                            </span>
+                        </div>
+                        <h3 class="text-lg font-black text-white mb-2">${p.title}</h3>
+                        <p class="text-slate-400 text-sm mb-6 leading-relaxed">${p.description || ''}</p>
+                    </div>
+                    <div class="flex items-center justify-between pt-4 border-t border-slate-800/80">
+                        <div>
+                            <span class="text-2xl font-black text-indigo-400">${p.price}</span>
+                            <span class="text-xs text-slate-400 font-bold"> ر.ع</span>
+                        </div>
+                        <button onclick="openCheckout(${p.id})" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition shadow-md shadow-indigo-600/20">اطلب الآن</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterProducts(category) {
+            if (category === 'all') {
+                renderProducts(allProducts);
+            } else {
+                renderProducts(allProducts.filter(p => p.category === category));
+            }
+        }
+
+        function openCheckout(id) {
+            selectedProduct = allProducts.find(p => p.id === id);
+            if (!selectedProduct) return;
+            document.getElementById('selected-product-title').innerText = `${selectedProduct.title} — السعر: ${selectedProduct.price} ر.ع`;
+            document.getElementById('checkout-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('checkout-modal').classList.add('hidden');
+        }
+
+        async function submitOrder(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.innerText = 'جاري إرسال الطلب...';
+
+            const name = document.getElementById('cust-name').value;
+            const phone = document.getElementById('cust-phone').value;
+            const ref = document.getElementById('transfer-ref').value;
+
+            const { error } = await supabaseClient.from('orders').insert([
+                {
+                    product_id: selectedProduct.id,
+                    customer_name: name,
+                    customer_phone: phone,
+                    transfer_reference: ref,
+                    status: 'pending'
+                }
+            ]);
+
+            btn.disabled = false;
+            btn.innerText = 'تأكيد وإرسال الطلب الآن';
+
+            if (error) {
+                alert('حدث خطأ أثناء إرسال الطلب، تأكد من تفعيل صلاحيات الجدول.');
+            } else {
+                alert('✅ تم استلام طلبك بنجاح! سيتم مراجعة التحويل وإرسال الاشتراك لرقمك في الواتساب.');
+                closeModal();
+                document.getElementById('order-form').reset();
+            }
+        }
+
+        fetchProducts();
+    </script>
+</body>
+</html>
